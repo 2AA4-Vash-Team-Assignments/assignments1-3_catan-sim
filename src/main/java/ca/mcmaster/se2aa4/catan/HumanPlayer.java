@@ -3,7 +3,10 @@ package ca.mcmaster.se2aa4.catan;
 /**
  * A human-controlled player that reads commands from the console.
  * Implements R2.1: human input via command line with regex parsing.
- * Uses HumanInputReader and CommandParser (DIP: depends on interface, not Scanner).
+ * Uses HumanInputReader and CommandParser, dependant on the interface and NOT
+ * the scanner.
+ * 
+ * @author Vaishnav Yandrapalli 400572601
  */
 public class HumanPlayer extends Player {
 
@@ -19,6 +22,7 @@ public class HumanPlayer extends Player {
     @Override
     public void takeTurn(CatanGame game) {
         boolean rolled = false;
+        CommandManager manager = game.getCommandManager();
         while (true) {
             System.out.print("P" + id + "> ");
             String line = inputReader.hasNextLine() ? inputReader.readLine() : "";
@@ -48,20 +52,42 @@ public class HumanPlayer extends Player {
                     listHand();
                     break;
                 case BUILD_SETTLEMENT:
-                    if (!rolled) { System.out.println("Roll first."); break; }
-                    game.tryBuildSettlement(this, cmd.getNodeId());
+                    if (!rolled) {
+                        System.out.println("Roll first.");
+                        break;
+                    }
+                    Node sNode = game.validateSettlementNode(this, cmd.getNodeId());
+                    if (sNode != null)
+                        manager.execute(new BuildSettlementCommand(this, sNode, game));
                     break;
                 case BUILD_CITY:
-                    if (!rolled) { System.out.println("Roll first."); break; }
-                    game.tryBuildCity(this, cmd.getNodeId());
+                    if (!rolled) {
+                        System.out.println("Roll first.");
+                        break;
+                    }
+                    Node cNode = game.validateCityNode(this, cmd.getNodeId());
+                    if (cNode != null)
+                        manager.execute(new BuildCityCommand(this, cNode, game));
                     break;
                 case BUILD_ROAD:
-                    if (!rolled) { System.out.println("Roll first."); break; }
-                    game.tryBuildRoad(this, cmd.getFromNodeId(), cmd.getToNodeId());
+                    if (!rolled) {
+                        System.out.println("Roll first.");
+                        break;
+                    }
+                    Edge edge = game.validateRoadEdge(this, cmd.getFromNodeId(), cmd.getToNodeId());
+                    if (edge != null)
+                        manager.execute(new BuildRoadCommand(this, edge, game));
+                    break;
+                case UNDO:
+                    manager.undo();
+                    break;
+                case REDO:
+                    manager.redo();
                     break;
                 default:
                     if (!line.isBlank()) {
-                        System.out.println("Unknown command. Use: Roll, Go, List, Build settlement <id>, Build city <id>, Build road <from>,<to>");
+                        System.out.println(
+                                "Unknown command. Use: Roll, Go, List, Undo, Redo, Build settlement <id>, Build city <id>, Build road <from>,<to>");
                     }
             }
         }
@@ -71,7 +97,8 @@ public class HumanPlayer extends Player {
         StringBuilder sb = new StringBuilder();
         for (ResourceType t : ResourceType.values()) {
             int c = getResourceCount(t);
-            if (c > 0) sb.append(t).append("=").append(c).append(" ");
+            if (c > 0)
+                sb.append(t).append("=").append(c).append(" ");
         }
         System.out.println(sb.length() > 0 ? sb.toString().trim() : "No resources");
     }

@@ -8,6 +8,8 @@ public class CommandParser {
     private static final Pattern ROLL = Pattern.compile("^\\s*(?i)roll\\s*$");
     private static final Pattern GO = Pattern.compile("^\\s*(?i)go\\s*$");
     private static final Pattern LIST = Pattern.compile("^\\s*(?i)list\\s*$");
+    private static final Pattern UNDO = Pattern.compile("^\\s*(?i)undo\\s*$");
+    private static final Pattern REDO = Pattern.compile("^\\s*(?i)redo\\s*$");
     private static final Pattern BUILD_SETTLEMENT = Pattern.compile("^\\s*(?i)build\\s+settlement\\s+(\\d+)\\s*$");
     private static final Pattern BUILD_CITY = Pattern.compile("^\\s*(?i)build\\s+city\\s+(\\d+)\\s*$");
     private static final Pattern BUILD_ROAD = Pattern.compile("^\\s*(?i)build\\s+road\\s+(\\d+)\\s*,\\s*(\\d+)\\s*$");
@@ -26,6 +28,12 @@ public class CommandParser {
         }
         if (LIST.matcher(trimmed).matches()) {
             return new ParsedCommand(CommandType.LIST);
+        }
+        if (UNDO.matcher(trimmed).matches()) {
+            return new ParsedCommand(CommandType.UNDO);
+        }
+        if (REDO.matcher(trimmed).matches()) {
+            return new ParsedCommand(CommandType.REDO);
         }
 
         Matcher settlementMatcher = BUILD_SETTLEMENT.matcher(trimmed);
