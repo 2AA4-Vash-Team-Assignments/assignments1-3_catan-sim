@@ -1,0 +1,362 @@
+%% ============================================================
+%% Assignment 3 – Extended Domain Model (UML Class Diagram)
+%% Undo/Redo via Command pattern (R3.1)
+%% ============================================================
+%% Changes from A2:
+%% - Command interface: execute() : boolean, unexecute() : void
+%% - Concrete commands: BuildRoadCommand, BuildSettlementCommand,
+%%   BuildCityCommand, EndTurnCommand
+%% - CommandManager: two ArrayDeque stacks (undo/redo history)
+%% - CatanGame gains CommandManager + validate* query methods
+%% - HumanPlayer routes builds through CommandManager (UNDO/REDO input)
+%% - CommandType enum gains UNDO, REDO
+%% - Player gains refundRoad/Settlement/City helpers
+%% ============================================================
+
+classDiagram
+    direction TB
+
+    %% ==================== ENUMERATIONS ====================
+
+    class ResourceType {
+        <<enumeration>>
+        WOOD
+        BRICK
+        WHEAT
+        ORE
+        SHEEP
+    }
+
+    class BuildingType {
+        <<enumeration>>
+        SETTLEMENT
+        CITY
+    }
+
+    class CommandType {
+        <<enumeration>>
+        ROLL
+        GO
+        LIST
+        BUILD_SETTLEMENT
+        BUILD_CITY
+        BUILD_ROAD
+        UNDO
+        REDO
+        UNKNOWN
+    }
+
+    class TurnPhase {
+        <<enumeration>>
+        AWAIT_ROLL
+        ROLL_DICE
+        ROBBER_DISCARD
+        ROBBER_PLACE
+        ROBBER_STEAL
+        POST_ROLL
+        BUILD_OR_TRADE
+        AWAIT_GO
+    }
+
+    %% ==================== GAME MANAGEMENT ====================
+
+    class CatanGame {
+        -currentRound : int
+        -longestRoadLength : int
+        -diceRollThisTurn : int
+        -currentTurnPhase : TurnPhase
+        -commandManager : CommandManager
+        +play() void
+        +setupPhase() void
+        +executeRound() boolean
+        +executeTurn(player : Player) void
+        +rollDice() int
+        +distributeResources(diceRoll : int) void
+        +handleRollSeven(roller : Player) void
+        +checkWinCondition() boolean
+        +updateLongestRoad() void
+        +tryBuildSettlement(player : Player, nodeId : int) void
+        +tryBuildCity(player : Player, nodeId : int) void
+        +tryBuildRoad(player : Player, fromId : int, toId : int) void
+        +validateSettlementNode(player : Player, nodeId : int) Node
+        +validateCityNode(player : Player, nodeId : int) Node
+        +validateRoadEdge(player : Player, fromId : int, toId : int) Edge
+        +getCommandManager() CommandManager
+        +getCurrentRound() int
+        +getCurrentTurnPhase() TurnPhase
+    }
+
+    class Configuration {
+        -maxRounds : int
+        -humanPlayerId : int
+        +getMaxRounds() int
+        +getHumanPlayerId() int
+        +isHumanGame() boolean
+        +load(filePath : String) void
+    }
+
+    class Dice {
+        +roll() int
+    }
+
+    class Bank {
+        -supply : Map~ResourceType, Integer~
+        +hasEnoughResources(type : ResourceType, amount : int) boolean
+        +distributeResource(type : ResourceType, amount : int) void
+        +collectResource(type : ResourceType, amount : int) void
+        +getRemainingCount(type : ResourceType) int
+    }
+
+    class Demonstrator {
+        +main(args : String[])$ void
+    }
+
+    %% ==================== BOARD & ROBBER ====================
+
+    class Board {
+        +initialize() void
+        +getTilesForNumber(number : int) List~Tile~
+        +getAvailableSettlementNodes(player : Player) List~Node~
+        +getAvailableRoadEdges(player : Player) List~Edge~
+        +getUpgradeableNodes(player : Player) List~Node~
+        +getAvailableSetupNodes() List~Node~
+        +calculateLongestRoad(player : Player) int
+    }
+
+    class Robber {
+        -currentTile : Tile
+        +getCurrentTile() Tile
+        +placeOn(tile : Tile) void
+    }
+
+    class Tile {
+        -id : int
+        -numberToken : int
+        -resourceType : ResourceType
+        +getId() int
+        +getNumberToken() int
+        +getResourceType() ResourceType
+        +getAdjacentNodes() List~Node~
+    }
+
+    class Node {
+        -id : int
+        +getId() int
+        +isOccupied() boolean
+        +getBuilding() Building
+        +setBuilding(b : Building) void
+        +satisfiesDistanceRule() boolean
+        +getAdjacentNodes() List~Node~
+        +getAdjacentTiles() List~Tile~
+        +getAdjacentEdges() List~Edge~
+    }
+
+    class Edge {
+        +isOccupied() boolean
+        +getRoad() Road
+        +setRoad(r : Road) void
+        +getEndpoints() List~Node~
+    }
+
+    %% ==================== GAME PIECES ====================
+
+    class Building {
+        -type : BuildingType
+        +getType() BuildingType
+        +setType(type : BuildingType) void
+        +getOwner() Player
+        +getVictoryPoints() int
+        +getResourceMultiplier() int
+    }
+
+    class Road {
+        +getOwner() Player
+        +getEdge() Edge
+    }
+
+    %% ==================== PLAYER HIERARCHY (OCP, LSP) ====================
+
+    class Player {
+        <<abstract>>
+        #id : int
+        #resources : Map~ResourceType, Integer~
+        #remainingSettlements : int
+        #remainingCities : int
+        #remainingRoads : int
+        +getId() int
+        +getTotalResourceCards() int
+        +getResourceCount(type : ResourceType) int
+        +addResource(type : ResourceType, amount : int) void
+        +removeResource(type : ResourceType, amount : int) void
+        +canBuildRoad() boolean
+        +canBuildSettlement() boolean
+        +canBuildCity() boolean
+        +buildRoad(edge : Edge, bank : Bank) void
+        +buildSettlement(node : Node, bank : Bank) void
+        +buildCity(node : Node, bank : Bank) void
+        +refundRoad() void
+        +refundSettlement() void
+        +refundCity() void
+        +takeTurn(game : CatanGame) void*
+    }
+
+    class AgentPlayer {
+        -random : Random
+        +takeTurn(game : CatanGame) void
+        +chooseRandomAction(board : Board, bank : Bank, round : int) void
+    }
+
+    class HumanPlayer {
+        -inputReader : HumanInputReader
+        -commandParser : CommandParser
+        +takeTurn(game : CatanGame) void
+    }
+
+    %% ==================== HUMAN INPUT (R2.1, DIP) ====================
+
+    class HumanInputReader {
+        <<interface>>
+        +readLine() String
+        +hasNextLine() boolean
+    }
+
+    class ConsoleInputReader {
+        -scanner : Scanner
+        +readLine() String
+        +hasNextLine() boolean
+    }
+
+    class CommandParser {
+        +parse(input : String) ParsedCommand
+    }
+
+    class ParsedCommand {
+        -commandType : CommandType
+        -nodeId : int
+        -fromNodeId : int
+        -toNodeId : int
+        +getCommandType() CommandType
+        +getNodeId() int
+        +getFromNodeId() int
+        +getToNodeId() int
+    }
+
+    %% ==================== GAME STATE EXPORT (R2.2, R2.3) ====================
+
+    class GameStateWriter {
+        +write(filePath : String) void
+    }
+
+    %% ==================== COMMAND PATTERN (R3.1) ====================
+
+    class Command {
+        <<interface>>
+        +execute() boolean
+        +unexecute() void
+    }
+
+    class CommandManager {
+        -undoStack : ArrayDeque~Command~
+        -redoStack : ArrayDeque~Command~
+        +execute(cmd : Command) void
+        +undo() void
+        +redo() void
+        +closeTurn() void
+    }
+
+    class BuildRoadCommand {
+        -player : Player
+        -edge : Edge
+        -game : CatanGame
+        +execute() boolean
+        +unexecute() void
+    }
+
+    class BuildSettlementCommand {
+        -player : Player
+        -node : Node
+        -game : CatanGame
+        +execute() boolean
+        +unexecute() void
+    }
+
+    class BuildCityCommand {
+        -player : Player
+        -node : Node
+        -game : CatanGame
+        +execute() boolean
+        +unexecute() void
+    }
+
+    class EndTurnCommand {
+        +execute() boolean
+        +unexecute() void
+    }
+
+    %% ==================== COMPOSITION ====================
+
+    CatanGame "1" *-- "1" Board
+    CatanGame "1" *-- "4" Player
+    CatanGame "1" *-- "1" Dice
+    CatanGame "1" *-- "1" Bank
+    CatanGame "1" *-- "1" Configuration
+    CatanGame "1" *-- "1" Robber
+    CatanGame "1" *-- "1" CommandManager
+
+    Board "1" *-- "19" Tile
+    Board "1" *-- "54" Node
+    Board "1" *-- "72" Edge
+
+    Robber "1" --> "0..1" Tile : on
+
+    %% ==================== ASSOCIATIONS ====================
+
+    CatanGame "1" --> "0..1" Player : longestRoadHolder
+    CatanGame ..> GameStateWriter : creates
+
+    Tile "1..3" -- "6" Node : adjacentTo
+    Node "2" -- "2..3" Edge : connectsTo
+    Node "1" -- "0..1" Building : has
+    Edge "1" -- "0..1" Road : has
+    Building "*" --> "1" Player : ownedBy
+    Road "*" --> "1" Player : ownedBy
+
+    HumanPlayer "1" *-- "1" HumanInputReader
+    HumanPlayer "1" *-- "1" CommandParser
+    CommandParser ..> ParsedCommand : produces
+    ParsedCommand --> CommandType
+
+    %% HumanPlayer creates and submits commands to CommandManager
+    HumanPlayer ..> CommandManager : submits commands to
+    HumanPlayer ..> BuildRoadCommand : creates
+    HumanPlayer ..> BuildSettlementCommand : creates
+    HumanPlayer ..> BuildCityCommand : creates
+
+    %% CommandManager invokes Command (invoker -> command)
+    CommandManager ..> Command : invokes
+
+    %% Concrete commands implement the Command interface
+    Command <|.. BuildRoadCommand
+    Command <|.. BuildSettlementCommand
+    Command <|.. BuildCityCommand
+    Command <|.. EndTurnCommand
+
+    %% Concrete commands hold a reference to CatanGame (receiver)
+    BuildRoadCommand --> CatanGame : receiver
+    BuildSettlementCommand --> CatanGame : receiver
+    BuildCityCommand --> CatanGame : receiver
+
+    %% Concrete commands hold a reference to the acting Player
+    BuildRoadCommand --> Player : acts on
+    BuildSettlementCommand --> Player : acts on
+    BuildCityCommand --> Player : acts on
+
+    %% ==================== INHERITANCE ====================
+
+    Player <|-- AgentPlayer
+    Player <|-- HumanPlayer
+    HumanInputReader <|.. ConsoleInputReader
+
+    %% ==================== DEPENDENCY ====================
+
+    Demonstrator ..> CatanGame : creates

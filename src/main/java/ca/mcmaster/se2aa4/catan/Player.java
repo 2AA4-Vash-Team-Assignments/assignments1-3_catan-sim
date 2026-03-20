@@ -119,6 +119,21 @@ public abstract class Player {
         remainingRoads--;
     }
 
+    public void refundRoad() {
+        remainingRoads++;
+    }
+
+    public void refundSettlement() {
+        remainingSettlements++;
+    }
+
+    // reverses buildCity action: returns the city piece and consumes the settlement
+    // piece that buildCity freed.
+    public void refundCity() {
+        remainingCities++;
+        remainingSettlements--;
+    }
+
     public int getRemainingSettlements() {
         return remainingSettlements;
     }

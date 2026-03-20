@@ -22,6 +22,7 @@ public class CatanGame {
     private final Random random;
     private final Robber robber;
     private final RobberHandler robberHandler;
+    private final CommandManager commandManager;
     private String stateFilePath;
 
     public CatanGame() {
@@ -33,6 +34,7 @@ public class CatanGame {
         this.random = new Random();
         this.robber = new Robber();
         this.robberHandler = new RobberHandler(board, players, robber, bank, random);
+        this.commandManager = new CommandManager();
         this.stateFilePath = null;
         this.currentRound = 0;
         this.longestRoadLength = 4;
@@ -89,7 +91,8 @@ public class CatanGame {
 
     private void placeInitialSettlementAndRoad(Player player, boolean isSecondPlacement) {
         List<Node> availableNodes = board.getAvailableSetupNodes();
-        if (availableNodes.isEmpty()) return;
+        if (availableNodes.isEmpty())
+            return;
 
         Node chosenNode = availableNodes.get(random.nextInt(availableNodes.size()));
         Building settlement = new Building(BuildingType.SETTLEMENT, player);
@@ -131,6 +134,7 @@ public class CatanGame {
             diceRollThisTurn = 0;
             currentPlayer = player;
             executeTurn(player);
+            commandManager.closeTurn();
             writeState();
             if (checkWinCondition()) {
                 printVictoryPoints();
@@ -183,7 +187,8 @@ public class CatanGame {
                 break;
             }
         }
-        if (human == null) return;
+        if (human == null)
+            return;
         HumanInputReader input = human.getInputReader();
         CommandParser parser = human.getCommandParser();
         while (true) {
@@ -202,79 +207,108 @@ public class CatanGame {
     }
 
     public void tryBuildSettlement(Player player, int nodeId) {
+        Node node = validateSettlementNode(player, nodeId);
+        if (node != null) {
+            player.buildSettlement(node, bank);
+            System.out.println(currentRound + " / P" + player.getId() + ": Built settlement at node " + nodeId);
+        }
+    }
+
+    /**
+     * returns the target Node if all preconditions pass, null otherwise (with a
+     * message).
+     */
+    public Node validateSettlementNode(Player player, int nodeId) {
         if (currentTurnPhase != TurnPhase.BUILD_OR_TRADE && currentTurnPhase != TurnPhase.POST_ROLL) {
             System.out.println("Cannot build right now (wrong phase).");
-            return;
+            return null;
         }
         if (nodeId < 0 || nodeId >= board.getNodes().size()) {
             System.out.println("Invalid node id.");
-            return;
+            return null;
         }
         Node node = board.getNodes().get(nodeId);
         if (!player.canBuildSettlement()) {
             System.out.println("Cannot build settlement (resources or pieces).");
-            return;
+            return null;
         }
         if (!board.getAvailableSettlementNodes(player).contains(node)) {
             System.out.println("Node not available for settlement.");
-            return;
+            return null;
         }
-        player.buildSettlement(node, bank);
-        System.out.println(currentRound + " / P" + player.getId() + ": Built settlement at node " + nodeId);
+        return node;
     }
 
     public void tryBuildCity(Player player, int nodeId) {
+        Node node = validateCityNode(player, nodeId);
+        if (node != null) {
+            player.buildCity(node, bank);
+            System.out.println(currentRound + " / P" + player.getId() + ": Built city at node " + nodeId);
+        }
+    }
+
+    /** returns the target Node if all preconditions pass */
+    public Node validateCityNode(Player player, int nodeId) {
         if (currentTurnPhase != TurnPhase.BUILD_OR_TRADE && currentTurnPhase != TurnPhase.POST_ROLL) {
             System.out.println("Cannot build right now (wrong phase).");
-            return;
+            return null;
         }
         if (nodeId < 0 || nodeId >= board.getNodes().size()) {
             System.out.println("Invalid node id.");
-            return;
+            return null;
         }
         Node node = board.getNodes().get(nodeId);
         if (!player.canBuildCity()) {
             System.out.println("Cannot build city (resources or pieces).");
-            return;
+            return null;
         }
         if (!board.getUpgradeableNodes(player).contains(node)) {
             System.out.println("Node does not have your settlement to upgrade.");
-            return;
+            return null;
         }
-        player.buildCity(node, bank);
-        System.out.println(currentRound + " / P" + player.getId() + ": Built city at node " + nodeId);
+        return node;
     }
 
     public void tryBuildRoad(Player player, int fromId, int toId) {
+        Edge edge = validateRoadEdge(player, fromId, toId);
+        if (edge != null) {
+            player.buildRoad(edge, bank);
+            System.out.println(
+                    currentRound + " / P" + player.getId() + ": Built road between nodes " + fromId + " and " + toId);
+        }
+    }
+
+    /** returns the target Edge if all preconditions pass */
+    public Edge validateRoadEdge(Player player, int fromId, int toId) {
         if (currentTurnPhase != TurnPhase.BUILD_OR_TRADE && currentTurnPhase != TurnPhase.POST_ROLL) {
             System.out.println("Cannot build right now (wrong phase).");
-            return;
+            return null;
         }
         if (fromId < 0 || toId < 0) {
             System.out.println("Invalid edge.");
-            return;
+            return null;
         }
         Edge edge = findEdge(fromId, toId);
         if (edge == null) {
             System.out.println("No such edge.");
-            return;
+            return null;
         }
         if (!player.canBuildRoad()) {
             System.out.println("Cannot build road (resources or pieces).");
-            return;
+            return null;
         }
         if (!board.getAvailableRoadEdges(player).contains(edge)) {
             System.out.println("Edge not available for road.");
-            return;
+            return null;
         }
-        player.buildRoad(edge, bank);
-        System.out.println(currentRound + " / P" + player.getId() + ": Built road between nodes " + fromId + " and " + toId);
+        return edge;
     }
 
     private Edge findEdge(int a, int b) {
         for (Edge e : board.getEdges()) {
             List<Node> ep = e.getEndpoints();
-            if ((ep.get(0).getId() == a && ep.get(1).getId() == b) || (ep.get(0).getId() == b && ep.get(1).getId() == a)) {
+            if ((ep.get(0).getId() == a && ep.get(1).getId() == b)
+                    || (ep.get(0).getId() == b && ep.get(1).getId() == a)) {
                 return e;
             }
         }
@@ -282,7 +316,8 @@ public class CatanGame {
     }
 
     private void writeState() {
-        if (stateFilePath == null) return;
+        if (stateFilePath == null)
+            return;
         try {
             int activePlayerId = (currentPlayer != null) ? currentPlayer.getId() : 1;
             GameStateWriter writer = new GameStateWriter(board, players, robber, currentRound, activePlayerId);
@@ -297,9 +332,11 @@ public class CatanGame {
         Tile blocked = robber.getCurrentTile();
         List<Tile> activeTiles = board.getTilesForNumber(diceRoll);
         for (Tile tile : activeTiles) {
-            if (tile == blocked) continue;
+            if (tile == blocked)
+                continue;
             ResourceType resource = tile.getResourceType();
-            if (resource == null) continue;
+            if (resource == null)
+                continue;
             for (Node node : tile.getAdjacentNodes()) {
                 if (node.isOccupied()) {
                     Building building = node.getBuilding();
@@ -404,5 +441,9 @@ public class CatanGame {
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    public CommandManager getCommandManager() {
+        return commandManager;
     }
 }
