@@ -259,39 +259,61 @@ public class Board {
      * Returns the player's road network as a list of connected components (segments).
      */
     public List<Set<Edge>> getRoadSegments(Player player) {
-        Set<Edge> playerEdges = new HashSet<>();
-        for (Edge edge : edges) {
-            if (edge.isOccupied() && edge.getRoad().getOwner() == player) {
-                playerEdges.add(edge);
-            }
-        }
+        Set<Edge> playerEdges = collectPlayerRoadEdges(player);
         List<Set<Edge>> segments = new ArrayList<>();
         Set<Edge> visited = new HashSet<>();
         for (Edge start : playerEdges) {
             if (visited.contains(start)) {
                 continue;
             }
-            Set<Edge> segment = new HashSet<>();
-            Queue<Edge> queue = new ArrayDeque<>();
-            queue.add(start);
-            while (!queue.isEmpty()) {
-                Edge current = queue.poll();
-                if (visited.contains(current)) {
-                    continue;
-                }
-                visited.add(current);
-                segment.add(current);
-                for (Node endpoint : current.getEndpoints()) {
-                    for (Edge adj : endpoint.getAdjacentEdges()) {
-                        if (adj.isOccupied() && adj.getRoad().getOwner() == player && !visited.contains(adj)) {
-                            queue.add(adj);
-                        }
-                    }
-                }
-            }
+            Set<Edge> segment = bfsExpandSegment(start, player, visited);
             segments.add(segment);
         }
         return segments;
+    }
+
+    private Set<Edge> collectPlayerRoadEdges(Player player) {
+        Set<Edge> result = new HashSet<>();
+        for (Edge edge : edges) {
+            if (edge.isOccupied() && edge.getRoad().getOwner() == player) {
+                result.add(edge);
+            }
+        }
+        return result;
+    }
+
+    private Set<Edge> bfsExpandSegment(Edge start, Player player, Set<Edge> visited) {
+        Set<Edge> segment = new HashSet<>();
+        Queue<Edge> queue = new ArrayDeque<>();
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            Edge current = queue.poll();
+            if (visited.contains(current)) {
+                continue;
+            }
+            visited.add(current);
+            segment.add(current);
+            for (Edge adj : getUnvisitedAdjacentPlayerEdges(current, player, visited)) {
+                queue.add(adj);
+            }
+        }
+        return segment;
+    }
+
+    private List<Edge> getUnvisitedAdjacentPlayerEdges(Edge current, Player player, Set<Edge> visited) {
+        List<Edge> result = new ArrayList<>();
+        for (Node endpoint : current.getEndpoints()) {
+            for (Edge adj : endpoint.getAdjacentEdges()) {
+                if (isPlayerRoad(adj, player) && !visited.contains(adj)) {
+                    result.add(adj);
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean isPlayerRoad(Edge edge, Player player) {
+        return edge.isOccupied() && edge.getRoad().getOwner() == player;
     }
 
     /**
@@ -314,43 +336,54 @@ public class Board {
     }
 
     private int bfsGapToSegment(Node start, Set<Node> targetNodes, Set<Edge> segA, Player player) {
-        Set<Node> segANodes = new HashSet<>();
-        for (Edge e : segA) {
-            segANodes.addAll(e.getEndpoints());
-        }
+        Set<Node> segANodes = collectSegmentNodes(segA);
         java.util.Deque<int[]> queue = new ArrayDeque<>();
         queue.add(new int[] { start.getId(), 0 });
         Set<Integer> visited = new HashSet<>();
         while (!queue.isEmpty()) {
             int[] state = queue.pollFirst();
-            Node current = nodes.get(state[0]);
-            int cost = state[1];
             if (visited.contains(state[0])) {
                 continue;
             }
             visited.add(state[0]);
-            if (targetNodes.contains(current) && !segANodes.contains(current)) {
+            Node current = nodes.get(state[0]);
+            int cost = state[1];
+            if (isReachableTarget(current, targetNodes, segANodes)) {
                 return cost;
             }
-            for (Edge adj : current.getAdjacentEdges()) {
-                for (Node next : adj.getEndpoints()) {
-                    if (next.getId() == state[0]) {
-                        continue;
-                    }
-                    int edgeCost = adj.isOccupied() && adj.getRoad().getOwner() == player ? 0 : 1;
-                    int nextCost = cost + edgeCost;
-                    if (visited.contains(next.getId())) {
-                        continue;
-                    }
-                    if (edgeCost == 0) {
-                        queue.addFirst(new int[] { next.getId(), nextCost });
-                    } else {
-                        queue.addLast(new int[] { next.getId(), nextCost });
-                    }
+            enqueueAdjacentNodes(current, state[0], cost, player, visited, queue);
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private Set<Node> collectSegmentNodes(Set<Edge> segment) {
+        Set<Node> nodes = new HashSet<>();
+        for (Edge e : segment) {
+            nodes.addAll(e.getEndpoints());
+        }
+        return nodes;
+    }
+
+    private boolean isReachableTarget(Node current, Set<Node> targetNodes, Set<Node> segANodes) {
+        return targetNodes.contains(current) && !segANodes.contains(current);
+    }
+
+    private void enqueueAdjacentNodes(Node current, int currentId, int cost, Player player,
+            Set<Integer> visited, java.util.Deque<int[]> queue) {
+        for (Edge adj : current.getAdjacentEdges()) {
+            for (Node next : adj.getEndpoints()) {
+                if (next.getId() == currentId || visited.contains(next.getId())) {
+                    continue;
+                }
+                int edgeCost = isPlayerRoad(adj, player) ? 0 : 1;
+                int[] nextState = new int[] { next.getId(), cost + edgeCost };
+                if (edgeCost == 0) {
+                    queue.addFirst(nextState);
+                } else {
+                    queue.addLast(nextState);
                 }
             }
         }
-        return Integer.MAX_VALUE;
     }
 
     public List<Tile> getTiles() {
