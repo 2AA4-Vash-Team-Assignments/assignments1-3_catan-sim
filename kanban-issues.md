@@ -43,3 +43,7 @@
 | #47 | Refactor Player into abstract hierarchy with AgentPlayer/HumanPlayer | daa8472 |
 | #48 | Implement robber mechanism — discard/place/steal on roll 7 (R2.5) | 3f9e754 |
 | #49 | Add node-ID mapping for visualizer (R2.3) | 2989abd |
+| #59 | A3 Task 1 - Implement Command pattern for undo/redo (R3.1) | 9c6d790 |
+| #61 | A3 Task 2 - Implement Chain of Responsibility for AI agent (R3.2, R3.3) | 7856c7e |
+| #62 | A3 Task 3 - Implement Observer pattern for game state notifications | 4415606 |
+| #63 | A3 Task 3 - Update UML domain model for all three design patterns | c5ccec6 |

@@ -70,7 +70,7 @@ In human mode, game state is written to `state.json` after each turn. The instru
 mvn test
 ```
 
-81 unit tests across 11 test classes, organized in a JUnit 5 test suite (`CatanTestSuite`).
+89 unit tests across 12 test classes, organized in a JUnit 5 test suite (`CatanTestSuite`).
 
 ## Project Structure
 
@@ -121,7 +121,7 @@ assignment1-catan-sim/
 │   ├── Demonstrator.java           # Entry point (static void main)
 │   ├── ResourceType.java           # Enum: WOOD, BRICK, WHEAT, ORE, SHEEP
 │   └── BuildingType.java           # Enum: SETTLEMENT, CITY
-├── src/test/java/ca/mcmaster/se2aa4/catan/   # Tests (81 tests, 11 classes)
+├── src/test/java/ca/mcmaster/se2aa4/catan/   # Tests (89 tests, 12 classes)
 ├── base_map.json               # Tile layout for visualizer
 ├── pom.xml                     # Maven build configuration
 └── README.md
