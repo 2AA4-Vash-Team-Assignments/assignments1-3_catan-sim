@@ -225,4 +225,76 @@ class CommandManagerTest {
         assertFalse(edge.isOccupied(),
                 "Redo must not build the road when the player cannot afford it");
     }
+
+    // Observer pattern tests
+
+    @Test
+    void testObserver_notifiedOnExecute() {
+        int[] count = {0};
+        GameObserver observer = () -> count[0]++;
+        CommandManager manager = game.getCommandManager();
+        manager.addObserver(observer);
+
+        Player player = new AgentPlayer(99);
+        player.addResource(ResourceType.BRICK, 1);
+        player.addResource(ResourceType.WOOD, 1);
+        Edge edge = board.getEdges().get(0);
+        edge.setRoad(null);
+
+        manager.execute(new BuildRoadCommand(player, edge, game));
+        assertEquals(1, count[0], "Observer should be notified once on successful execute");
+    }
+
+    @Test
+    void testObserver_notifiedOnUndo() {
+        int[] count = {0};
+        GameObserver observer = () -> count[0]++;
+        CommandManager manager = game.getCommandManager();
+        manager.addObserver(observer);
+
+        Player player = new AgentPlayer(99);
+        player.addResource(ResourceType.BRICK, 1);
+        player.addResource(ResourceType.WOOD, 1);
+        Edge edge = board.getEdges().get(0);
+        edge.setRoad(null);
+
+        manager.execute(new BuildRoadCommand(player, edge, game));
+        count[0] = 0; // reset after execute notification
+        manager.undo();
+        assertEquals(1, count[0], "Observer should be notified once on successful undo");
+    }
+
+    @Test
+    void testObserver_notNotifiedOnFailedExecute() {
+        int[] count = {0};
+        GameObserver observer = () -> count[0]++;
+        CommandManager manager = game.getCommandManager();
+        manager.addObserver(observer);
+
+        Player player = new AgentPlayer(99);
+        // no resources — execute will fail
+        Edge edge = board.getEdges().get(0);
+        edge.setRoad(null);
+
+        manager.execute(new BuildRoadCommand(player, edge, game));
+        assertEquals(0, count[0], "Observer must NOT be notified when execute fails");
+    }
+
+    @Test
+    void testObserver_removedObserverNotNotified() {
+        int[] count = {0};
+        GameObserver observer = () -> count[0]++;
+        CommandManager manager = game.getCommandManager();
+        manager.addObserver(observer);
+        manager.removeObserver(observer);
+
+        Player player = new AgentPlayer(99);
+        player.addResource(ResourceType.BRICK, 1);
+        player.addResource(ResourceType.WOOD, 1);
+        Edge edge = board.getEdges().get(0);
+        edge.setRoad(null);
+
+        manager.execute(new BuildRoadCommand(player, edge, game));
+        assertEquals(0, count[0], "Removed observer must not be notified");
+    }
 }

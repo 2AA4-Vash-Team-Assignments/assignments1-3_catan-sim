@@ -450,4 +450,9 @@ public class CatanGame {
     public List<Player> getPlayers() {
         return players;
     }
+
+    /** Registers an observer for game state change notifications (Observer pattern). */
+    public void addObserver(GameObserver observer) {
+        commandManager.addObserver(observer);
+    }
 }
