@@ -11,9 +11,9 @@ import java.util.Random;
  */
 public class ValueMaximizingHandler extends AgentActionHandler {
 
-    private static final double VALUE_VP = 1.0;
-    private static final double VALUE_BUILD_NO_VP = 0.8;
-    private static final double VALUE_SPEND_UNDER_FIVE = 0.5;
+    static final double VALUE_VP = 1.0;
+    static final double VALUE_BUILD_NO_VP = 0.8;
+    static final double VALUE_SPEND_UNDER_FIVE = 0.5;
 
     private final Random random = new SecureRandom();
 
@@ -59,7 +59,7 @@ public class ValueMaximizingHandler extends AgentActionHandler {
         return result;
     }
 
-    private double evaluateAction(Player agent, boolean earnsVP, int resourceCost) {
+    static double evaluateAction(Player agent, boolean earnsVP, int resourceCost) {
         if (earnsVP) {
             return VALUE_VP;
         }

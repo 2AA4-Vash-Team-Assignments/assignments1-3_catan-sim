@@ -19,6 +19,7 @@ import org.junit.platform.suite.api.Suite;
  * - GameStateWriterTest: JSON output for visualizer (R2.2, R2.3)
  * - TurnPhaseTest: Automaton states and phase transitions
  * - CommandManagerTest: Command pattern undo/redo correctness (R3.1)
+ * - AgentHandlerTest: Chain of Responsibility handler tests (R3.2, R3.3)
  */
 @Suite
 @SelectClasses({

@@ -9,11 +9,13 @@
 
 ## IN PROGRESS
 
-| GitHub # | Title | Description | Maps to |
-|----------|-------|-------------|---------|
-| #33 | Write reflection report for all tasks | Complete the LaTeX report for Tasks 1-5, submit via A2L. | Report |
+(No items currently in progress.)
 
 ## DONE
+
+| GitHub # | Title | Closed by Commit |
+|----------|-------|--------------------|
+| #33 | Write reflection report for all tasks | (Report submitted via A2L) |
 
 | GitHub # | Title | Closed by Commit |
 |----------|-------|--------------------|

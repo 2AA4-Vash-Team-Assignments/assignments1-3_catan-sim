@@ -1,5 +1,6 @@
 package ca.mcmaster.se2aa4.catan;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -100,10 +101,8 @@ class AgentHandlerTest {
         List<Node> availSettlements = board.getAvailableSettlementNodes(agent);
         List<Edge> availRoads = board.getAvailableRoadEdges(agent);
 
-        if (availSettlements.isEmpty() || availRoads.isEmpty()) {
-            // If setup didn't leave both options, skip — this is a board layout edge case
-            return;
-        }
+        Assumptions.assumeTrue(!availSettlements.isEmpty() && !availRoads.isEmpty(),
+                "Board setup must leave both settlement and road options for this test");
 
         ValueMaximizingHandler handler = new ValueMaximizingHandler();
         Command result = handler.handle(agent, game, game.getPlayers());
@@ -179,11 +178,8 @@ class AgentHandlerTest {
         // Verify threat condition holds
         int finalAgentLen = board.calculateLongestRoad(agent);
         int finalOpponentLen = board.calculateLongestRoad(opponent);
-        if (finalOpponentLen < finalAgentLen - 1 || finalOpponentLen == 0) {
-            // setup roads already made the condition hold in most runs;
-            // if not, we still test the handler returns null (no threat)
-            return;
-        }
+        Assumptions.assumeTrue(finalOpponentLen >= finalAgentLen - 1 && finalOpponentLen > 0,
+                "Opponent road must be within 1 of agent's for this test");
 
         LongestRoadHandler handler = new LongestRoadHandler(null);
         Command result = handler.handle(agent, game, game.getPlayers());
@@ -228,10 +224,8 @@ class AgentHandlerTest {
             }
         }
 
-        if (threatExists) {
-            // Setup randomness made an opponent close — skip this run
-            return;
-        }
+        Assumptions.assumeFalse(threatExists,
+                "No opponent should threaten agent's road for this test");
 
         LongestRoadHandler handler = new LongestRoadHandler(null);
         Command result = handler.handle(agent, game, game.getPlayers());
