@@ -10,6 +10,10 @@ import java.util.List;
  */
 public class BuildRoadCommand implements Command {
 
+    static final int BRICK_COST = 1;
+    static final int WOOD_COST = 1;
+    static final int TOTAL_COST = BRICK_COST + WOOD_COST;
+
     private final Player player;
     private final Edge edge;
     private final CatanGame game;
@@ -37,10 +41,9 @@ public class BuildRoadCommand implements Command {
     public void unexecute() {
         edge.setRoad(null);
         player.refundRoad();
-        player.addResource(ResourceType.BRICK, 1);
-        player.addResource(ResourceType.WOOD, 1);
-        // bank gave out these cards on execute so return them (decrease supply)
-        game.getBank().distributeResource(ResourceType.BRICK, 1);
-        game.getBank().distributeResource(ResourceType.WOOD, 1);
+        player.addResource(ResourceType.BRICK, BRICK_COST);
+        player.addResource(ResourceType.WOOD, WOOD_COST);
+        game.getBank().distributeResource(ResourceType.BRICK, BRICK_COST);
+        game.getBank().distributeResource(ResourceType.WOOD, WOOD_COST);
     }
 }

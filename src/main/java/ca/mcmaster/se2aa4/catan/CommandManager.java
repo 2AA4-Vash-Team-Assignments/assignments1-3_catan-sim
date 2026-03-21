@@ -20,7 +20,6 @@ public class CommandManager {
      * redo stack. Notifies observers on success.
      *
      * @param cmd command to execute
-     * @author Vaishnav Yandrapalli 400572601
      */
     public void execute(Command cmd) {
         if (cmd.execute()) {
@@ -31,16 +30,14 @@ public class CommandManager {
     }
 
     /**
-     * Undoes the last command performed by the user iff the command is not an
-     * EndTurnCommand. Notifies observers after a successful undo.
+     * Undoes the last command if it is undoable (turn boundaries block undo).
+     * Notifies observers after a successful undo.
      */
     public void undo() {
         if (undoStack.isEmpty()) {
-            System.out.println("Nothing to undo.");
             return;
         }
-        if (undoStack.peek() instanceof EndTurnCommand) {
-            System.out.println("Cannot undo past the start of this turn.");
+        if (!undoStack.peek().isUndoable()) {
             return;
         }
         Command cmd = undoStack.pop();
@@ -50,30 +47,32 @@ public class CommandManager {
     }
 
     /**
-     * Redoes the last, previously undone command. Notifies observers on success.
+     * Redoes the last undone command. If execution fails (e.g., resources were
+     * spent after the undo), the command is preserved on the redo stack so the
+     * user can retry later. Notifies observers on success.
      */
     public void redo() {
         if (redoStack.isEmpty()) {
-            System.out.println("Nothing to redo.");
             return;
         }
-        Command cmd = redoStack.pop();
+        Command cmd = redoStack.peek();
         if (cmd.execute()) {
+            redoStack.pop();
             undoStack.push(cmd);
             notifyObservers();
         }
-        // if execute() returns false (resources spent since undo), redo is silently
-        // abandoned.
     }
 
-    /** ensures a turn boundary so undo cannot go into the previous turn. */
+    /** Marks a turn boundary so undo cannot reach into the previous turn. */
     public void closeTurn() {
         undoStack.push(new EndTurnCommand());
     }
 
     /** Registers an observer to be notified on state changes. */
     public void addObserver(GameObserver observer) {
-        observers.add(observer);
+        if (observer != null) {
+            observers.add(observer);
+        }
     }
 
     /** Removes a previously registered observer. */
@@ -83,7 +82,7 @@ public class CommandManager {
 
     /** Notifies all registered observers that game state has changed. */
     private void notifyObservers() {
-        for (GameObserver observer : observers) {
+        for (GameObserver observer : new ArrayList<>(observers)) {
             observer.onGameStateChanged();
         }
     }

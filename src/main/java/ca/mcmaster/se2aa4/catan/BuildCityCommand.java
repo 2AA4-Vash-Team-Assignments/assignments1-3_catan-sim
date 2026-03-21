@@ -8,6 +8,10 @@ package ca.mcmaster.se2aa4.catan;
  */
 public class BuildCityCommand implements Command {
 
+    static final int WHEAT_COST = 2;
+    static final int ORE_COST = 3;
+    static final int TOTAL_COST = WHEAT_COST + ORE_COST;
+
     private final Player player;
     private final Node node;
     private final CatanGame game;
@@ -44,10 +48,9 @@ public class BuildCityCommand implements Command {
         // downgrade back to settlement; reverse buildCity's piece accounting
         node.getBuilding().setType(BuildingType.SETTLEMENT);
         player.refundCity();
-        player.addResource(ResourceType.WHEAT, 2);
-        player.addResource(ResourceType.ORE, 3);
-        // bank picked up these cards on execute, so return them (decrease supply back)
-        game.getBank().distributeResource(ResourceType.WHEAT, 2);
-        game.getBank().distributeResource(ResourceType.ORE, 3);
+        player.addResource(ResourceType.WHEAT, WHEAT_COST);
+        player.addResource(ResourceType.ORE, ORE_COST);
+        game.getBank().distributeResource(ResourceType.WHEAT, WHEAT_COST);
+        game.getBank().distributeResource(ResourceType.ORE, ORE_COST);
     }
 }

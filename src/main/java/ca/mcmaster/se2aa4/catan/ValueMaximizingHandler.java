@@ -29,7 +29,7 @@ public class ValueMaximizingHandler extends AgentActionHandler {
         }
         double best = candidates.stream().mapToDouble(ScoredCommand::getScore).max().orElse(0);
         List<ScoredCommand> bestList = candidates.stream()
-                .filter(sc -> sc.getScore() == best)
+                .filter(sc -> Double.compare(sc.getScore(), best) == 0)
                 .toList();
         return bestList.get(random.nextInt(bestList.size())).getCommand();
     }
@@ -40,19 +40,19 @@ public class ValueMaximizingHandler extends AgentActionHandler {
 
         if (agent.canBuildCity()) {
             for (Node node : board.getUpgradeableNodes(agent)) {
-                double value = evaluateAction(agent, true, 5);
+                double value = evaluateAction(agent, true, BuildCityCommand.TOTAL_COST);
                 result.add(new ScoredCommand(new BuildCityCommand(agent, node, game), value));
             }
         }
         if (agent.canBuildSettlement()) {
             for (Node node : board.getAvailableSettlementNodes(agent)) {
-                double value = evaluateAction(agent, true, 4);
+                double value = evaluateAction(agent, true, BuildSettlementCommand.TOTAL_COST);
                 result.add(new ScoredCommand(new BuildSettlementCommand(agent, node, game), value));
             }
         }
         if (agent.canBuildRoad()) {
             for (Edge edge : board.getAvailableRoadEdges(agent)) {
-                double value = evaluateAction(agent, false, 2);
+                double value = evaluateAction(agent, false, BuildRoadCommand.TOTAL_COST);
                 result.add(new ScoredCommand(new BuildRoadCommand(agent, edge, game), value));
             }
         }

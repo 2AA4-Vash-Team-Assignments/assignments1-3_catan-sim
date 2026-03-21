@@ -43,21 +43,18 @@ public class AgentPlayer extends Player {
 
     /**
      * R3.2, R3.3: Passes the action-selection request through the handler chain.
-     * Uses CommandManager so all actions support undo/redo.
+     * The loop re-enters the chain after each action so constraint handlers are
+     * re-evaluated. Terminates when the chain returns no action (the agent has
+     * nothing profitable to do or cannot afford anything).
      */
     private void chooseAction(CatanGame game) {
         CommandManager manager = game.getCommandManager();
         List<Player> allPlayers = game.getPlayers();
 
-        while (true) {
-            Command cmd = actionChain.handle(this, game, allPlayers);
-            if (cmd == null) {
-                break;
-            }
+        Command cmd = actionChain.handle(this, game, allPlayers);
+        while (cmd != null) {
             manager.execute(cmd);
-            if (getTotalResourceCards() <= 7) {
-                break;
-            }
+            cmd = actionChain.handle(this, game, allPlayers);
         }
     }
 }

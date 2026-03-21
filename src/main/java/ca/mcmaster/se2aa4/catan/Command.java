@@ -14,4 +14,9 @@ public interface Command {
     boolean execute();
 
     void unexecute();
+
+    /** Whether this command can be undone. Boundary markers return false. */
+    default boolean isUndoable() {
+        return true;
+    }
 }

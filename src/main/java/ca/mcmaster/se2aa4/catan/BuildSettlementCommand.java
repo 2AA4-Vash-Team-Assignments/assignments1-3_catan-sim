@@ -8,6 +8,12 @@ package ca.mcmaster.se2aa4.catan;
  */
 public class BuildSettlementCommand implements Command {
 
+    static final int BRICK_COST = 1;
+    static final int WOOD_COST = 1;
+    static final int WHEAT_COST = 1;
+    static final int SHEEP_COST = 1;
+    static final int TOTAL_COST = BRICK_COST + WOOD_COST + WHEAT_COST + SHEEP_COST;
+
     private final Player player;
     private final Node node;
     private final CatanGame game;
@@ -41,13 +47,13 @@ public class BuildSettlementCommand implements Command {
     public void unexecute() {
         node.setBuilding(null);
         player.refundSettlement();
-        player.addResource(ResourceType.BRICK, 1);
-        player.addResource(ResourceType.WOOD, 1);
-        player.addResource(ResourceType.WHEAT, 1);
-        player.addResource(ResourceType.SHEEP, 1);
-        game.getBank().distributeResource(ResourceType.BRICK, 1);
-        game.getBank().distributeResource(ResourceType.WOOD, 1);
-        game.getBank().distributeResource(ResourceType.WHEAT, 1);
-        game.getBank().distributeResource(ResourceType.SHEEP, 1);
+        player.addResource(ResourceType.BRICK, BRICK_COST);
+        player.addResource(ResourceType.WOOD, WOOD_COST);
+        player.addResource(ResourceType.WHEAT, WHEAT_COST);
+        player.addResource(ResourceType.SHEEP, SHEEP_COST);
+        game.getBank().distributeResource(ResourceType.BRICK, BRICK_COST);
+        game.getBank().distributeResource(ResourceType.WOOD, WOOD_COST);
+        game.getBank().distributeResource(ResourceType.WHEAT, WHEAT_COST);
+        game.getBank().distributeResource(ResourceType.SHEEP, SHEEP_COST);
     }
 }

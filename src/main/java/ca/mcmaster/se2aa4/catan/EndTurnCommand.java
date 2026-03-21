@@ -17,4 +17,9 @@ public class EndTurnCommand implements Command {
     @Override
     public void unexecute() {
     }
+
+    @Override
+    public boolean isUndoable() {
+        return false;
+    }
 }
