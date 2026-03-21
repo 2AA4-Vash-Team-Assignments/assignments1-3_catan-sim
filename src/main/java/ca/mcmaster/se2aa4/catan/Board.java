@@ -375,6 +375,10 @@ public class Board {
                 if (next.getId() == currentId || visited.contains(next.getId())) {
                     continue;
                 }
+                // Player's own roads cost 0; empty edges cost 1; opponent roads are impassable
+                if (adj.isOccupied() && !isPlayerRoad(adj, player)) {
+                    continue;
+                }
                 int edgeCost = isPlayerRoad(adj, player) ? 0 : 1;
                 int[] nextState = new int[] { next.getId(), cost + edgeCost };
                 if (edgeCost == 0) {

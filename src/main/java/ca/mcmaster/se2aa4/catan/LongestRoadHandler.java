@@ -18,7 +18,7 @@ public class LongestRoadHandler extends AgentActionHandler {
 
     @Override
     protected Command tryHandle(Player agent, CatanGame game, List<Player> allPlayers) {
-        if (!isLongestRoadThreat(agent, game, allPlayers)) {
+        if (!isLongestRoadThreat(agent, game, allPlayers) || !agent.canBuildRoad()) {
             return null;
         }
         Board board = game.getBoard();
@@ -37,7 +37,7 @@ public class LongestRoadHandler extends AgentActionHandler {
                 continue;
             }
             int otherLength = game.getBoard().calculateLongestRoad(other);
-            if (otherLength >= myLength - 1 && otherLength > 0) {
+            if (otherLength >= myLength - 1 && otherLength <= myLength && myLength > 0) {
                 return true;
             }
         }
