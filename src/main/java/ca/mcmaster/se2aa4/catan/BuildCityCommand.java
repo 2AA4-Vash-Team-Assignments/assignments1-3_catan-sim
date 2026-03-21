@@ -1,9 +1,9 @@
 package ca.mcmaster.se2aa4.catan;
 
 /**
- * This class handles impliments the command interface to be able to undo and
- * redo the human action of building a city in the game, on some given tile.
- * 
+ * Implements the Command interface to support undo and redo for the
+ * action of upgrading a settlement to a city on a given node.
+ *
  * @author Vaishnav Yandrapalli 400572601
  */
 public class BuildCityCommand implements Command {
@@ -14,7 +14,7 @@ public class BuildCityCommand implements Command {
 
     /**
      * Constructor for BuildCityCommand
-     * 
+     *
      * @param player player building the city
      * @param node   node to build the city on
      * @param game   game the city is being built in
@@ -25,10 +25,8 @@ public class BuildCityCommand implements Command {
         this.game = game;
     }
 
+    /** Executes the city upgrade if the player can afford it. */
     @Override
-    /**
-     * Executes the command.
-     */
     public boolean execute() {
         if (!player.canBuildCity()) {
             System.out.println("Cannot build city (resources or pieces).");
@@ -40,10 +38,8 @@ public class BuildCityCommand implements Command {
         return true;
     }
 
+    /** Undoes the city upgrade, downgrading back to a settlement. */
     @Override
-    /**
-     * Undoes the command.
-     */
     public void unexecute() {
         // downgrade back to settlement; reverse buildCity's piece accounting
         node.getBuilding().setType(BuildingType.SETTLEMENT);

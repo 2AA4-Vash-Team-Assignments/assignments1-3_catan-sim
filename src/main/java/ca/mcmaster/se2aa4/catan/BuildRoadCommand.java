@@ -3,7 +3,7 @@ package ca.mcmaster.se2aa4.catan;
 import java.util.List;
 
 /**
- * Class impliments command interface to be able to undo and redo the human
+ * Implements the Command interface to support undo and redo for the
  * action of building a road between two nodes.
  * 
  * @author Vaishnav Yandrapalli 400572601

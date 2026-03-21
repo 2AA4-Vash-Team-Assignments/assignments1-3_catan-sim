@@ -1,8 +1,8 @@
 package ca.mcmaster.se2aa4.catan;
 
 /**
- * Class impliments command interface to be able to undo and redo the human
- * action of building a settlement on some given node.
+ * Implements the Command interface to support undo and redo for the
+ * action of building a settlement on a given node.
  * 
  * @author Vaishnav Yandrapalli 400572601
  */

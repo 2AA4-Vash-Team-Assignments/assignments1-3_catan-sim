@@ -1,4 +1,4 @@
-# Assignment 2 — Catan Simulator
+# Assignment 3 — Catan Simulator
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=2AA4-Vash-Team-Assignments_assignment1-catan-sim&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=2AA4-Vash-Team-Assignments_assignment1-catan-sim)
 
@@ -6,9 +6,9 @@ SFWRENG 2AA4 — Software Design I (McMaster University, Winter 2026)
 
 ## Overview
 
-This project implements a simplified Settlers of Catan board game simulator with human gameplay support. Four players (three computer agents and one optional human) play on a standard 19-tile hex board, collecting resources, building roads, settlements, and cities, and competing to be the first to reach 10 victory points.
+This project implements a simplified Settlers of Catan board game simulator. Four players (three computer agents and one optional human) play on a standard 19-tile hex board, collecting resources, building roads, settlements, and cities, and competing to be the first to reach 10 victory points.
 
-A2 extends the A1 simulator with: human player input via command-line commands parsed with regular expressions (R2.1), a board visualizer integration using the instructor's Catanatron-based Python script (R2.2), external JSON game state (R2.3), step-forward functionality (R2.4), the robber mechanism with discard/place/steal on rolling 7 (R2.5), and a fully documented Demonstrator class (R2.6).
+A3 extends the simulator with three design patterns: the **Command pattern** for undo/redo functionality (R3.1), the **Chain of Responsibility pattern** for rule-based machine intelligence (R3.2, R3.3), and the **Observer pattern** for game state notifications.
 
 ## Requirements
 
@@ -55,6 +55,8 @@ When a human player is configured, the following commands are available during t
 | `Build settlement N` | Build a settlement at node N |
 | `Build city N` | Upgrade settlement at node N to a city |
 | `Build road N1,N2` | Build a road between nodes N1 and N2 |
+| `Undo` | Undo the last build action |
+| `Redo` | Redo a previously undone action |
 
 Between agent turns, the game waits for `Go` to step forward (R2.4).
 
@@ -68,7 +70,7 @@ In human mode, game state is written to `state.json` after each turn. The instru
 mvn test
 ```
 
-68 unit tests across 10 test classes, organized in a JUnit 5 test suite (`CatanTestSuite`).
+81 unit tests across 11 test classes, organized in a JUnit 5 test suite (`CatanTestSuite`).
 
 ## Project Structure
 
@@ -77,36 +79,49 @@ assignment1-catan-sim/
 ├── model/                                     # Design artifacts
 │   ├── catan-domain-model.mmd                 #   A1 domain model (Mermaid)
 │   ├── catan-domain-model-a2.mmd              #   A2 extended domain model
+│   ├── catan-domain-model-A3Task1.mmd         #   A3 domain model (all 3 patterns)
 │   ├── agent-turn-automaton.mmd               #   Turn automaton (state machine)
-│   ├── DESIGN-A2.md                           #   A2 design documentation
-│   └── Final_UML_Diagram.png                  #   A1 exported diagram
-├── src/main/java/ca/mcmaster/se2aa4/catan/   # Implementation (25 source files)
-│   ├── CatanGame.java          # Game engine and orchestration
-│   ├── Board.java              # Hex board topology (19 tiles, 54 nodes, 72 edges)
-│   ├── Tile.java               # Hexagonal land tile
-│   ├── Node.java               # Intersection (settlement/city location)
-│   ├── Edge.java               # Path between nodes (road location)
-│   ├── Player.java             # Abstract base for all player types
-│   ├── AgentPlayer.java        # Computer-controlled random agent
-│   ├── HumanPlayer.java        # Human-controlled player (console input)
-│   ├── HumanInputReader.java   # Interface for reading input (DIP)
-│   ├── ConsoleInputReader.java # Console implementation of HumanInputReader
-│   ├── CommandParser.java      # Regex-based command parser (R2.1)
-│   ├── CommandType.java        # Enum: ROLL, GO, LIST, BUILD_*, UNKNOWN
-│   ├── ParsedCommand.java      # Parsed command value object
-│   ├── Building.java           # Settlement or city
-│   ├── Road.java               # Road placed on an edge
-│   ├── Bank.java               # Resource supply manager
-│   ├── Dice.java               # Two six-sided dice
-│   ├── Robber.java             # Robber entity (R2.5)
-│   ├── RobberHandler.java     # Robber sequence logic (SRP extraction)
-│   ├── TurnPhase.java          # Enum: 8-state turn automaton
-│   ├── GameStateWriter.java    # JSON state serializer (R2.2, R2.3)
-│   ├── Configuration.java      # Config file parser
-│   ├── Demonstrator.java       # Entry point (static void main)
-│   ├── ResourceType.java       # Enum: WOOD, BRICK, WHEAT, ORE, SHEEP
-│   └── BuildingType.java       # Enum: SETTLEMENT, CITY
-├── src/test/java/ca/mcmaster/se2aa4/catan/   # Tests (68 tests, 10 classes)
+│   └── DESIGN-A2.md                           #   A2 design documentation
+├── src/main/java/ca/mcmaster/se2aa4/catan/
+│   ├── CatanGame.java              # Game engine and orchestration
+│   ├── Board.java                  # Hex board topology (19 tiles, 54 nodes, 72 edges)
+│   ├── Tile.java                   # Hexagonal land tile
+│   ├── Node.java                   # Intersection (settlement/city location)
+│   ├── Edge.java                   # Path between nodes (road location)
+│   ├── Player.java                 # Abstract base for all player types
+│   ├── AgentPlayer.java            # Rule-based AI agent (Chain of Responsibility)
+│   ├── HumanPlayer.java            # Human-controlled player (console input)
+│   ├── Command.java                # Command interface (undo/redo, R3.1)
+│   ├── CommandManager.java         # Undo/redo stacks + Observer subject
+│   ├── BuildSettlementCommand.java # Reversible settlement build
+│   ├── BuildCityCommand.java       # Reversible city upgrade
+│   ├── BuildRoadCommand.java       # Reversible road build
+│   ├── EndTurnCommand.java         # Turn boundary marker
+│   ├── AgentActionHandler.java     # Abstract handler (Chain of Responsibility)
+│   ├── ExcessCardsHandler.java     # R3.3: spend when >7 cards
+│   ├── RoadSegmentHandler.java     # R3.3: connect nearby road segments
+│   ├── LongestRoadHandler.java     # R3.3: defend longest road
+│   ├── ValueMaximizingHandler.java # R3.2: value-based action selection
+│   ├── GameObserver.java           # Observer interface (Task 3)
+│   ├── ConsoleLogObserver.java     # Concrete observer
+│   ├── HumanInputReader.java       # Interface for reading input (DIP)
+│   ├── ConsoleInputReader.java     # Console implementation
+│   ├── CommandParser.java          # Regex-based command parser
+│   ├── CommandType.java            # Enum: ROLL, GO, LIST, BUILD_*, UNDO, REDO
+│   ├── ParsedCommand.java          # Parsed command value object
+│   ├── Building.java               # Settlement or city
+│   ├── Road.java                   # Road placed on an edge
+│   ├── Bank.java                   # Resource supply manager
+│   ├── Dice.java                   # Two six-sided dice
+│   ├── Robber.java                 # Robber entity
+│   ├── RobberHandler.java          # Robber sequence logic
+│   ├── TurnPhase.java              # Enum: 8-state turn automaton
+│   ├── GameStateWriter.java        # JSON state serializer
+│   ├── Configuration.java          # Config file parser
+│   ├── Demonstrator.java           # Entry point (static void main)
+│   ├── ResourceType.java           # Enum: WOOD, BRICK, WHEAT, ORE, SHEEP
+│   └── BuildingType.java           # Enum: SETTLEMENT, CITY
+├── src/test/java/ca/mcmaster/se2aa4/catan/   # Tests (81 tests, 11 classes)
 ├── base_map.json               # Tile layout for visualizer
 ├── pom.xml                     # Maven build configuration
 └── README.md
