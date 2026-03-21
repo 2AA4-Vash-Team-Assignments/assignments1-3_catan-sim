@@ -35,6 +35,7 @@ public class CatanGame {
         this.robber = new Robber();
         this.robberHandler = new RobberHandler(board, players, robber, bank, random);
         this.commandManager = new CommandManager();
+        this.commandManager.addObserver(new ConsoleLogObserver());
         this.stateFilePath = null;
         this.currentRound = 0;
         this.longestRoadLength = 4;
@@ -454,5 +455,10 @@ public class CatanGame {
     /** Registers an observer for game state change notifications (Observer pattern). */
     public void addObserver(GameObserver observer) {
         commandManager.addObserver(observer);
+    }
+
+    /** Removes a previously registered observer (Observer pattern). */
+    public void removeObserver(GameObserver observer) {
+        commandManager.removeObserver(observer);
     }
 }
