@@ -1,16 +1,9 @@
 %% ============================================================
 %% Assignment 3 – Extended Domain Model (UML Class Diagram)
-%% Undo/Redo via Command pattern (R3.1)
-%% ============================================================
-%% Changes from A2:
-%% - Command interface: execute() : boolean, unexecute() : void
-%% - Concrete commands: BuildRoadCommand, BuildSettlementCommand,
-%%   BuildCityCommand, EndTurnCommand
-%% - CommandManager: two ArrayDeque stacks (undo/redo history)
-%% - CatanGame gains CommandManager + validate* query methods
-%% - HumanPlayer routes builds through CommandManager (UNDO/REDO input)
-%% - CommandType enum gains UNDO, REDO
-%% - Player gains refundRoad/Settlement/City helpers
+%% Three Design Patterns:
+%%   Task 1: Command pattern for undo/redo (R3.1)
+%%   Task 2: Chain of Responsibility for rule-based AI (R3.2, R3.3)
+%%   Task 3: Observer pattern for game state notifications
 %% ============================================================
 
 classDiagram
@@ -82,6 +75,8 @@ classDiagram
         +validateCityNode(player : Player, nodeId : int) Node
         +validateRoadEdge(player : Player, fromId : int, toId : int) Edge
         +getCommandManager() CommandManager
+        +getPlayers() List~Player~
+        +addObserver(observer : GameObserver) void
         +getCurrentRound() int
         +getCurrentTurnPhase() TurnPhase
     }
@@ -121,6 +116,8 @@ classDiagram
         +getUpgradeableNodes(player : Player) List~Node~
         +getAvailableSetupNodes() List~Node~
         +calculateLongestRoad(player : Player) int
+        +hasRoadSegmentsWithinTwoUnits(player : Player) boolean
+        +getRoadSegments(player : Player) List~Set~Edge~~
     }
 
     class Robber {
@@ -201,9 +198,9 @@ classDiagram
     }
 
     class AgentPlayer {
-        -random : Random
+        -actionChain : AgentActionHandler
         +takeTurn(game : CatanGame) void
-        +chooseRandomAction(board : Board, bank : Bank, round : int) void
+        -chooseAction(game : CatanGame) void
     }
 
     class HumanPlayer {
@@ -258,10 +255,14 @@ classDiagram
     class CommandManager {
         -undoStack : ArrayDeque~Command~
         -redoStack : ArrayDeque~Command~
+        -observers : List~GameObserver~
         +execute(cmd : Command) void
         +undo() void
         +redo() void
         +closeTurn() void
+        +addObserver(observer : GameObserver) void
+        +removeObserver(observer : GameObserver) void
+        -notifyObservers() void
     }
 
     class BuildRoadCommand {
@@ -292,6 +293,53 @@ classDiagram
         +execute() boolean
         +unexecute() void
     }
+
+    %% ==================== CHAIN OF RESPONSIBILITY (R3.2, R3.3) ====================
+
+    class AgentActionHandler {
+        <<abstract>>
+        #next : AgentActionHandler
+        +handle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command
+        #tryHandle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command*
+    }
+
+    class ExcessCardsHandler {
+        #tryHandle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command
+    }
+
+    class RoadSegmentHandler {
+        #tryHandle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command
+    }
+
+    class LongestRoadHandler {
+        #tryHandle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command
+    }
+
+    class ValueMaximizingHandler {
+        #tryHandle(agent : Player, game : CatanGame, allPlayers : List~Player~) Command
+    }
+
+    AgentActionHandler <|-- ExcessCardsHandler
+    AgentActionHandler <|-- RoadSegmentHandler
+    AgentActionHandler <|-- LongestRoadHandler
+    AgentActionHandler <|-- ValueMaximizingHandler
+    AgentActionHandler --> AgentActionHandler : next
+    AgentPlayer "1" *-- "1" AgentActionHandler : actionChain
+
+    %% ==================== OBSERVER PATTERN (Task 3) ====================
+
+    class GameObserver {
+        <<interface>>
+        +onGameStateChanged() void
+    }
+
+    class ConsoleLogObserver {
+        +onGameStateChanged() void
+    }
+
+    GameObserver <|.. ConsoleLogObserver
+    CommandManager "1" *-- "*" GameObserver : observers
+    CommandManager ..> GameObserver : notifies
 
     %% ==================== COMPOSITION ====================
 
