@@ -1,5 +1,6 @@
 package ca.mcmaster.se2aa4.catan;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -14,7 +15,7 @@ public class ValueMaximizingHandler extends AgentActionHandler {
     private static final double VALUE_BUILD_NO_VP = 0.8;
     private static final double VALUE_SPEND_UNDER_FIVE = 0.5;
 
-    private final Random random = new Random();
+    private final Random random = new SecureRandom();
 
     public ValueMaximizingHandler() {
         super(null);

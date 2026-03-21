@@ -1,5 +1,6 @@
 package ca.mcmaster.se2aa4.catan;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
 
@@ -8,7 +9,7 @@ import java.util.Random;
  */
 public class RoadSegmentHandler extends AgentActionHandler {
 
-    private final Random random = new Random();
+    private final Random random = new SecureRandom();
 
     public RoadSegmentHandler(AgentActionHandler next) {
         super(next);
