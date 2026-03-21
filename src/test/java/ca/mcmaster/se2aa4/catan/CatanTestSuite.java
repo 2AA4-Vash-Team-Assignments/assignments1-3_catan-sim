@@ -32,7 +32,8 @@ import org.junit.platform.suite.api.Suite;
         RobberTest.class,
         GameStateWriterTest.class,
         TurnPhaseTest.class,
-        CommandManagerTest.class
+        CommandManagerTest.class,
+        AgentHandlerTest.class
 })
 public class CatanTestSuite {
     // class intentionally left empty.

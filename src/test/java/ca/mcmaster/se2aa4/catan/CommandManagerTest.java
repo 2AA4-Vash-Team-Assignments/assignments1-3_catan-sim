@@ -281,6 +281,26 @@ class CommandManagerTest {
     }
 
     @Test
+    void testObserver_notifiedOnRedo() {
+        int[] count = {0};
+        GameObserver observer = () -> count[0]++;
+        CommandManager manager = game.getCommandManager();
+        manager.addObserver(observer);
+
+        Player player = new AgentPlayer(99);
+        player.addResource(ResourceType.BRICK, 2);
+        player.addResource(ResourceType.WOOD, 2);
+        Edge edge = board.getEdges().get(0);
+        edge.setRoad(null);
+
+        manager.execute(new BuildRoadCommand(player, edge, game));
+        manager.undo();
+        count[0] = 0; // reset after execute and undo notifications
+        manager.redo();
+        assertEquals(1, count[0], "Observer should be notified once on successful redo");
+    }
+
+    @Test
     void testObserver_removedObserverNotNotified() {
         int[] count = {0};
         GameObserver observer = () -> count[0]++;
