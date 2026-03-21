@@ -1,21 +1,32 @@
 package ca.mcmaster.se2aa4.catan;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
- * A computer-controlled player that makes random decisions.
- * Implements the agent behaviour: auto-roll, distribute resources,
- * then build randomly (R1.8: forced spending when hand > 7).
+ * A computer-controlled player with rule-based machine intelligence.
+ * Uses Chain of Responsibility for decision-making (R3.2, R3.3): each handler
+ * in the chain checks if it applies (constraint or value-maximization); if so
+ * returns an action, else passes to the next handler. All builds go through
+ * CommandManager for undo/redo integration.
  */
 public class AgentPlayer extends Player {
 
-    private final Random random;
+    private final AgentActionHandler actionChain;
 
     public AgentPlayer(int id) {
         super(id);
-        this.random = new Random();
+        this.actionChain = new ExcessCardsHandler(
+                new RoadSegmentHandler(
+                        new LongestRoadHandler(
+                                new ValueMaximizingHandler())));
+    }
+
+    /**
+     * Constructor for testing: inject custom handler chain.
+     */
+    AgentPlayer(int id, AgentActionHandler actionChain) {
+        super(id);
+        this.actionChain = actionChain;
     }
 
     @Override
@@ -26,60 +37,27 @@ public class AgentPlayer extends Player {
         } else {
             game.distributeResources(diceRoll);
         }
-        chooseRandomAction(game.getBoard(), game.getBank(), game.getCurrentRound());
+        chooseAction(game);
         game.updateLongestRoad();
     }
 
     /**
-     * R1.8: Implements a simple linear check of all actions that can be executed,
-     * then picks one randomly. Agents with >7 cards must try to spend by building.
+     * R3.2, R3.3: Passes the action-selection request through the handler chain.
+     * Uses CommandManager so all actions support undo/redo.
      */
-    public void chooseRandomAction(Board board, Bank bank, int currentRound) {
+    private void chooseAction(CatanGame game) {
+        CommandManager manager = game.getCommandManager();
+        List<Player> allPlayers = game.getPlayers();
+
         while (true) {
-            List<Runnable> actions = collectPossibleActions(board, bank, currentRound);
-            if (actions.isEmpty()) {
+            Command cmd = actionChain.handle(this, game, allPlayers);
+            if (cmd == null) {
                 break;
             }
-            Runnable chosen = actions.get(random.nextInt(actions.size()));
-            chosen.run();
+            manager.execute(cmd);
             if (getTotalResourceCards() <= 7) {
                 break;
             }
         }
-    }
-
-    private List<Runnable> collectPossibleActions(Board board, Bank bank, int currentRound) {
-        List<Runnable> actions = new ArrayList<>();
-
-        if (canBuildCity()) {
-            for (Node node : board.getUpgradeableNodes(this)) {
-                Node n = node;
-                actions.add(() -> {
-                    buildCity(n, bank);
-                    System.out.println(currentRound + " / P" + id + ": Built city at node " + n.getId());
-                });
-            }
-        }
-        if (canBuildSettlement()) {
-            for (Node node : board.getAvailableSettlementNodes(this)) {
-                Node n = node;
-                actions.add(() -> {
-                    buildSettlement(n, bank);
-                    System.out.println(currentRound + " / P" + id + ": Built settlement at node " + n.getId());
-                });
-            }
-        }
-        if (canBuildRoad()) {
-            for (Edge edge : board.getAvailableRoadEdges(this)) {
-                Edge e = edge;
-                actions.add(() -> {
-                    buildRoad(e, bank);
-                    List<Node> endpoints = e.getEndpoints();
-                    System.out.println(currentRound + " / P" + id + ": Built road between nodes "
-                            + endpoints.get(0).getId() + " and " + endpoints.get(1).getId());
-                });
-            }
-        }
-        return actions;
     }
 }
