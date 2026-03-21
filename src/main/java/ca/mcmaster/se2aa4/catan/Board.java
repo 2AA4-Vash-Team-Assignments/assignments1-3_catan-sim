@@ -1,8 +1,10 @@
 package ca.mcmaster.se2aa4.catan;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 public class Board {
@@ -232,6 +234,156 @@ public class Board {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns true if the player has two disconnected road segments that are at most
+     * 2 empty edges apart (R3.3: connect nearby segments).
+     */
+    public boolean hasRoadSegmentsWithinTwoUnits(Player player) {
+        List<Set<Edge>> segments = getRoadSegments(player);
+        if (segments.size() < 2) {
+            return false;
+        }
+        for (int i = 0; i < segments.size(); i++) {
+            for (int j = i + 1; j < segments.size(); j++) {
+                if (getMinGapBetweenSegments(segments.get(i), segments.get(j), player) <= 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the player's road network as a list of connected components (segments).
+     */
+    public List<Set<Edge>> getRoadSegments(Player player) {
+        Set<Edge> playerEdges = collectPlayerRoadEdges(player);
+        List<Set<Edge>> segments = new ArrayList<>();
+        Set<Edge> visited = new HashSet<>();
+        for (Edge start : playerEdges) {
+            if (visited.contains(start)) {
+                continue;
+            }
+            Set<Edge> segment = bfsExpandSegment(start, player, visited);
+            segments.add(segment);
+        }
+        return segments;
+    }
+
+    private Set<Edge> collectPlayerRoadEdges(Player player) {
+        Set<Edge> result = new HashSet<>();
+        for (Edge edge : edges) {
+            if (edge.isOccupied() && edge.getRoad().getOwner() == player) {
+                result.add(edge);
+            }
+        }
+        return result;
+    }
+
+    private Set<Edge> bfsExpandSegment(Edge start, Player player, Set<Edge> visited) {
+        Set<Edge> segment = new HashSet<>();
+        Queue<Edge> queue = new ArrayDeque<>();
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            Edge current = queue.poll();
+            if (visited.contains(current)) {
+                continue;
+            }
+            visited.add(current);
+            segment.add(current);
+            for (Edge adj : getUnvisitedAdjacentPlayerEdges(current, player, visited)) {
+                queue.add(adj);
+            }
+        }
+        return segment;
+    }
+
+    private List<Edge> getUnvisitedAdjacentPlayerEdges(Edge current, Player player, Set<Edge> visited) {
+        List<Edge> result = new ArrayList<>();
+        for (Node endpoint : current.getEndpoints()) {
+            for (Edge adj : endpoint.getAdjacentEdges()) {
+                if (isPlayerRoad(adj, player) && !visited.contains(adj)) {
+                    result.add(adj);
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean isPlayerRoad(Edge edge, Player player) {
+        return edge.isOccupied() && edge.getRoad().getOwner() == player;
+    }
+
+    /**
+     * Returns the minimum number of empty edges needed to connect two road segments.
+     * Uses BFS: traverse via player's roads (cost 0) or empty edges (cost 1).
+     */
+    private int getMinGapBetweenSegments(Set<Edge> segA, Set<Edge> segB, Player player) {
+        Set<Node> segBNodes = new HashSet<>();
+        for (Edge e : segB) {
+            segBNodes.addAll(e.getEndpoints());
+        }
+        int minGap = Integer.MAX_VALUE;
+        for (Edge startEdge : segA) {
+            for (Node startNode : startEdge.getEndpoints()) {
+                int gap = bfsGapToSegment(startNode, segBNodes, segA, player);
+                minGap = Math.min(minGap, gap);
+            }
+        }
+        return minGap == Integer.MAX_VALUE ? Integer.MAX_VALUE : minGap;
+    }
+
+    private int bfsGapToSegment(Node start, Set<Node> targetNodes, Set<Edge> segA, Player player) {
+        Set<Node> segANodes = collectSegmentNodes(segA);
+        java.util.Deque<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[] { start.getId(), 0 });
+        Set<Integer> visited = new HashSet<>();
+        while (!queue.isEmpty()) {
+            int[] state = queue.pollFirst();
+            if (visited.contains(state[0])) {
+                continue;
+            }
+            visited.add(state[0]);
+            Node current = nodes.get(state[0]);
+            int cost = state[1];
+            if (isReachableTarget(current, targetNodes, segANodes)) {
+                return cost;
+            }
+            enqueueAdjacentNodes(current, state[0], cost, player, visited, queue);
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private Set<Node> collectSegmentNodes(Set<Edge> segment) {
+        Set<Node> nodes = new HashSet<>();
+        for (Edge e : segment) {
+            nodes.addAll(e.getEndpoints());
+        }
+        return nodes;
+    }
+
+    private boolean isReachableTarget(Node current, Set<Node> targetNodes, Set<Node> segANodes) {
+        return targetNodes.contains(current) && !segANodes.contains(current);
+    }
+
+    private void enqueueAdjacentNodes(Node current, int currentId, int cost, Player player,
+            Set<Integer> visited, java.util.Deque<int[]> queue) {
+        for (Edge adj : current.getAdjacentEdges()) {
+            for (Node next : adj.getEndpoints()) {
+                if (next.getId() == currentId || visited.contains(next.getId())) {
+                    continue;
+                }
+                int edgeCost = isPlayerRoad(adj, player) ? 0 : 1;
+                int[] nextState = new int[] { next.getId(), cost + edgeCost };
+                if (edgeCost == 0) {
+                    queue.addFirst(nextState);
+                } else {
+                    queue.addLast(nextState);
+                }
+            }
+        }
     }
 
     public List<Tile> getTiles() {

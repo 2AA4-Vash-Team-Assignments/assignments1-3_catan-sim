@@ -446,4 +446,8 @@ public class CatanGame {
     public CommandManager getCommandManager() {
         return commandManager;
     }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
 }
