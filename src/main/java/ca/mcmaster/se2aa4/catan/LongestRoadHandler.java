@@ -1,8 +1,11 @@
 package ca.mcmaster.se2aa4.catan;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * R3.3: If another player has longest road at most 1 shorter than the agent's,
@@ -26,8 +29,30 @@ public class LongestRoadHandler extends AgentActionHandler {
         if (available.isEmpty()) {
             return null;
         }
-        Edge edge = available.get(random.nextInt(available.size()));
+        // Filter to edges connected to existing roads so we extend the longest road
+        Set<Node> roadNodes = collectPlayerRoadNodes(board, agent);
+        List<Edge> connected = new ArrayList<>();
+        for (Edge e : available) {
+            for (Node endpoint : e.getEndpoints()) {
+                if (roadNodes.contains(endpoint)) {
+                    connected.add(e);
+                    break;
+                }
+            }
+        }
+        List<Edge> candidates = connected.isEmpty() ? available : connected;
+        Edge edge = candidates.get(random.nextInt(candidates.size()));
         return new BuildRoadCommand(agent, edge, game);
+    }
+
+    private Set<Node> collectPlayerRoadNodes(Board board, Player player) {
+        Set<Node> roadNodes = new HashSet<>();
+        for (Edge edge : board.getEdges()) {
+            if (edge.isOccupied() && edge.getRoad().getOwner() == player) {
+                roadNodes.addAll(edge.getEndpoints());
+            }
+        }
+        return roadNodes;
     }
 
     private boolean isLongestRoadThreat(Player agent, CatanGame game, List<Player> allPlayers) {

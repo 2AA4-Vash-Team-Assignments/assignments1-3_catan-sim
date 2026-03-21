@@ -119,19 +119,45 @@ public abstract class Player {
         remainingRoads--;
     }
 
-    public void refundRoad() {
+    /**
+     * Fully reverses a road build: restores piece count, returns resources
+     * to the player, and collects them back into the bank.
+     */
+    public void refundRoad(Bank bank) {
         remainingRoads++;
+        addResource(ResourceType.BRICK, 1);
+        addResource(ResourceType.WOOD, 1);
+        bank.distributeResource(ResourceType.BRICK, 1);
+        bank.distributeResource(ResourceType.WOOD, 1);
     }
 
-    public void refundSettlement() {
+    /**
+     * Fully reverses a settlement build: restores piece count, returns resources
+     * to the player, and collects them back into the bank.
+     */
+    public void refundSettlement(Bank bank) {
         remainingSettlements++;
+        addResource(ResourceType.BRICK, 1);
+        addResource(ResourceType.WOOD, 1);
+        addResource(ResourceType.WHEAT, 1);
+        addResource(ResourceType.SHEEP, 1);
+        bank.distributeResource(ResourceType.BRICK, 1);
+        bank.distributeResource(ResourceType.WOOD, 1);
+        bank.distributeResource(ResourceType.WHEAT, 1);
+        bank.distributeResource(ResourceType.SHEEP, 1);
     }
 
-    // reverses buildCity action: returns the city piece and consumes the settlement
-    // piece that buildCity freed.
-    public void refundCity() {
+    /**
+     * Fully reverses a city upgrade: restores piece counts, returns resources
+     * to the player, and collects them back into the bank.
+     */
+    public void refundCity(Bank bank) {
         remainingCities++;
         remainingSettlements--;
+        addResource(ResourceType.WHEAT, 2);
+        addResource(ResourceType.ORE, 3);
+        bank.distributeResource(ResourceType.WHEAT, 2);
+        bank.distributeResource(ResourceType.ORE, 3);
     }
 
     public int getRemainingSettlements() {

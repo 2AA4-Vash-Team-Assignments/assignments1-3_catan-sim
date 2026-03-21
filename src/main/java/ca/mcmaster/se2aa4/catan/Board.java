@@ -375,11 +375,13 @@ public class Board {
                 if (next.getId() == currentId || visited.contains(next.getId())) {
                     continue;
                 }
-                // Player's own roads cost 0; empty edges cost 1; opponent roads are impassable
-                if (adj.isOccupied() && !isPlayerRoad(adj, player)) {
-                    continue;
+                // Player's own roads cost 0; empty and opponent-occupied edges cost 1
+                int edgeCost;
+                if (isPlayerRoad(adj, player)) {
+                    edgeCost = 0;
+                } else {
+                    edgeCost = 1;
                 }
-                int edgeCost = isPlayerRoad(adj, player) ? 0 : 1;
                 int[] nextState = new int[] { next.getId(), cost + edgeCost };
                 if (edgeCost == 0) {
                     queue.addFirst(nextState);

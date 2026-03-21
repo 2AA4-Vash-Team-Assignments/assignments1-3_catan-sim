@@ -46,14 +46,6 @@ public class BuildSettlementCommand implements Command {
     @Override
     public void unexecute() {
         node.setBuilding(null);
-        player.refundSettlement();
-        player.addResource(ResourceType.BRICK, BRICK_COST);
-        player.addResource(ResourceType.WOOD, WOOD_COST);
-        player.addResource(ResourceType.WHEAT, WHEAT_COST);
-        player.addResource(ResourceType.SHEEP, SHEEP_COST);
-        game.getBank().distributeResource(ResourceType.BRICK, BRICK_COST);
-        game.getBank().distributeResource(ResourceType.WOOD, WOOD_COST);
-        game.getBank().distributeResource(ResourceType.WHEAT, WHEAT_COST);
-        game.getBank().distributeResource(ResourceType.SHEEP, SHEEP_COST);
+        player.refundSettlement(game.getBank());
     }
 }

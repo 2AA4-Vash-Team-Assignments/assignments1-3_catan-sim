@@ -45,12 +45,7 @@ public class BuildCityCommand implements Command {
     /** Undoes the city upgrade, downgrading back to a settlement. */
     @Override
     public void unexecute() {
-        // downgrade back to settlement; reverse buildCity's piece accounting
         node.getBuilding().setType(BuildingType.SETTLEMENT);
-        player.refundCity();
-        player.addResource(ResourceType.WHEAT, WHEAT_COST);
-        player.addResource(ResourceType.ORE, ORE_COST);
-        game.getBank().distributeResource(ResourceType.WHEAT, WHEAT_COST);
-        game.getBank().distributeResource(ResourceType.ORE, ORE_COST);
+        player.refundCity(game.getBank());
     }
 }

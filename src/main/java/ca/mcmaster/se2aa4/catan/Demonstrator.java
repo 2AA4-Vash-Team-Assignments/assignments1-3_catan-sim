@@ -30,6 +30,9 @@ public class Demonstrator {
         // Create the game — initializes board, 4 agent players, dice, bank
         CatanGame game = new CatanGame();
 
+        // Register the console log observer for game state notifications (Observer pattern)
+        game.addObserver(new ConsoleLogObserver());
+
         // Load configuration if a config file path was provided as an argument
         if (args.length > 0) {
             game.getConfiguration().load(args[0]);

@@ -40,10 +40,6 @@ public class BuildRoadCommand implements Command {
     @Override
     public void unexecute() {
         edge.setRoad(null);
-        player.refundRoad();
-        player.addResource(ResourceType.BRICK, BRICK_COST);
-        player.addResource(ResourceType.WOOD, WOOD_COST);
-        game.getBank().distributeResource(ResourceType.BRICK, BRICK_COST);
-        game.getBank().distributeResource(ResourceType.WOOD, WOOD_COST);
+        player.refundRoad(game.getBank());
     }
 }
